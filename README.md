@@ -13,3 +13,5 @@ PsFCIV is two-way compatible with FCIV database format, thus transition from FCI
   * **FCIV** -- migrates FCIV database to PsFCIV format.
   * **Rebuild** -- adds new files to database and removes no longer existing files from database. This mode doesn't check existing files.
   * **Online** -- performs one-time hash calculation without creating a database file.
+# License
+PsFCIV is licensed under [Ms-PL](https://github.com/PKISolutions/PsFCIV/blob/master/License.md) license
