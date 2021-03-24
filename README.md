@@ -30,3 +30,38 @@ Get command help:
 ``` PowerShell
 Get-Help Start-PsFCIV
 ```
+# Examples
+``` PowerShell
+Start-PsFCIV -Path C:\tmp -XML DB.XML
+```
+Checks all files in C:\tmp folder by using SHA1 hash algorithm and compares them with information stored in the DB.XML database.
+
+``` PowerShell
+Start-PsFCIV -Path C:\tmp -XML DB.XML -HashAlgorithm SHA1, SHA256, SHA512 -Recurse
+```
+Checks all files in C:\tmp folder and subfolders by using SHA1, SHA256 and SHA512 algorithms.
+
+``` PowerShell
+Start-PsFCIV -Path C:\tmp -Include *.txt -XML DB.XML -HashAlgorithm SHA512
+```
+Checks all TXT files in C:\tmp folder by using SHA512 hash algorithm.
+
+``` PowerShell
+Start-PsFCIV -Path C:\tmp -XML DB.XML -Rebuild
+```
+Rebuilds DB file, by removing all unused entries (when an entry exists, but the file does not exist) from the XML file and add all new files that has no records in the XML file using SHA1 algorithm. Existing files are not checked for integrity consistence.
+
+``` PowerShell
+Start-PsFCIV -Path C:\tmp -XML DB.XML -HashAlgorithm SHA256 -Action Rename
+```
+Checks all files in C:\tmp folder using SHA256 algorithm and renames files with Length, LastWriteTime or hash mismatch by adding .BAD extension to them. The 'Delete' action can be appended to delete all bad files.
+
+``` PowerShell
+Start-PsFCIV -Path C:\tmp -XML DB.XML -Show Ok, Bad
+```
+Checks all files in C:\tmp folder using SHA1 algorithm and shows filenames that match Ok or Bad category.
+
+``` PowerShell
+Start-PsFCIV -Path C:\tmp -Recurse -Online -HashAlgorithm SHA1, SHA256, SHA384
+```
+Performs a runtime recursive file hash calculation using SHA1, SHA256 and SHA384 hash algorithm.
