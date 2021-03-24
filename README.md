@@ -15,3 +15,18 @@ PsFCIV is two-way compatible with FCIV database format, thus transition from FCI
   * **Online** -- performs one-time hash calculation without creating a database file.
 # License
 PsFCIV is licensed under [Microsoft Public License (Ms-PL)](https://github.com/PKISolutions/PsFCIV/blob/master/License.md) license
+
+# Installation
+The PsFCIV module is installed from [PowerShell Gallery](https://www.powershellgallery.com/packages/PsFCIV):
+``` PowerShell
+Install-Module -Name PsFCIV
+```
+# Execution
+Import module:
+``` PowerShell
+Import-Module PsFCIV
+```
+Get command help:
+``` PowerShell
+Get-Help Start-PsFCIV
+```
