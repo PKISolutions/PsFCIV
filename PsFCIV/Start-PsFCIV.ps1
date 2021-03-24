@@ -2,52 +2,47 @@ function Start-PsFCIV {
 <#
 .ExternalHelp PsFCIV.Help.xml
 #>
-[CmdletBinding()]
+[CmdletBinding(DefaultParameterSetName = '__xml')]
     param (
         [Parameter(Mandatory = $true, Position = 0)]
         [IO.DirectoryInfo]$Path,
         [Parameter(Mandatory = $true, Position = 1, ParameterSetName = '__xml')]
         [string]$XML,
-        [Parameter(Position = 2)]
         [string]$Include = "*",
-        [Parameter(Position = 3)]
         [string[]]$Exclude,
+        [Parameter(ParameterSetName = '__xml')]
         [ValidateSet("Rename", "Delete")]
         [string]$Action,
+        [Parameter(ParameterSetName = '__xml')]
         [ValidateSet("Bad", "Locked", "Missed", "New", "Ok", "Unknown", "All")]
         [String[]]$Show,
         [ValidateSet("MD5", "SHA1", "SHA256", "SHA384", "SHA512")]
         [AllowEmptyCollection()]
         [String[]]$HashAlgorithm = "SHA1",
         [switch]$Recurse,
+        [Parameter(ParameterSetName = '__xml')]
+        [switch]$Strict,
+        [Parameter(ParameterSetName = '__xml')]
         [switch]$Rebuild,
-        [switch]$Quiet,
-        [switch]$NoStatistic,
         [Parameter(ParameterSetName = '__online')]
         [switch]$Online
     )
 
     #region Prepare environment
     # configure preferences
-    if ($PSBoundParameters.Verbose) {$VerbosePreference = "continue"}
-    if ($PSBoundParameters.Debug) {$DebugPreference = "continue"}
+    if ($PSBoundParameters.Verbose) {$VerbosePreference = "continue"; $v = $true}
+    if ($PSBoundParameters.Debug) {$DebugPreference = "continue"; $d = $true}
     
     # add DB file to exclusion list
-
-    if (Test-Path -LiteralPath $XML) {
-        $XML = (Resolve-Path $XML).ProviderPath
+    if (!$Online) {
+        $XML = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($XML)
+        $Exclude += $XML
     }
-    $Exclude += $XML
     
     # preserving current path
-    $script:oldpath = $pwd.ProviderPath
-    if (Test-Path -LiteralPath $path) {
-        Set-Location -LiteralPath $path
-        if ($pwd.Provider.Name -ne "FileSystem") {
-            Set-Location $oldpath
-            throw "Specified path is not filesystem path. Try again!"
-        }
-    } else {throw "Specified path not found."}
+    if (!(Test-Path -LiteralPath (Resolve-Path $Path))) {
+        throw "Specified directory path not found."
+    }
     
     # creating statistics variable with properties. Each property will contain file names (and paths) with corresponding status.
     $script:stats = New-Object PsFCIV.Support.StatTable
@@ -60,19 +55,19 @@ function Start-PsFCIV {
     # internal function to calculate resulting statistics and show if if necessary.	
     function __showStats {
     # if -Show parameter is presented we display selected groups (Total, New, Ok, Bad, Missed, Unknown)
-        if ($show -and !$NoStatistic) {
-            if ($Show -eq "All" -or $Show.Contains("All")) {
+        if ($show) {
+            if ($Show.Contains("All")) {
                 $stats | __showGridView "Bad", "Locked", "Missed", "New", "Ok", "Unknown" $statcount.Total
             } else {
                 $stats | Select-Object $show | __showGridView $show $statcount.Total
             }
         }
         # script work in numbers
-        if (!$Quiet) {
+        if ($v -or $d) {
             Write-Host ----------------------------------- -ForegroundColor Green
             if ($Rebuild) {
                 Write-Host "Total entries processed      :" $statcount.Total -ForegroundColor Cyan
-                Write-Host "Total removed unused entries :" $statcount.Del -ForegroundColor Yellow
+                Write-Host "Total removed unused entries :" $statcount.Deleted -ForegroundColor Yellow
                 Write-Host "Total new added files        :" $statcount.New -ForegroundColor Green
                 Write-Host "Total locked files           :" $statcount.Locked -ForegroundColor Yellow
             } else {
@@ -96,13 +91,13 @@ function Start-PsFCIV {
     function __addStatCounter ($filename, $status) {
         $script:statcount.$status++
         $script:statcount.Total++
-        if (!$NoStatistic) {
+        if ($Show -and ($Show.Contains($status) -or $Show.Contains("All"))) {
             $stats.$status.Add($filename)
         }
     }
     if ($Online) {
         Write-Debug "Online mode ON"
-        dirx -Path .\* -Filter $Include -Exclude $Exclude $Recurse -Force | ForEach-Object {
+        dirx -Path (Join-Path $Path *) -Filter $Include -Exclude $Exclude $Recurse -Force | ForEach-Object {
             Write-Verbose "Perform file '$($_.fullName)' checking."
             $file = Get-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue
             if (__testFileLock $file) {return}
@@ -132,18 +127,18 @@ function Start-PsFCIV {
             if ((Test-Path -LiteralPath $_.Name)) {
                 if ($_.Name -eq $xml) {
                     Write-Debug "File '$($_.Name)' is DB file. Removed."
-                    $statcount.Del++
+                    $statcount.Deleted++
                 } else {
                     [void]$interm.Entries.Add($_)
                 }
             } else {
                 Write-Debug "File '$($_.Name)' does not exist. Removed."
-                $statcount.Del++
+                $statcount.Deleted++
             }
         }
         
         $statcount.Total = $old.Entries.Count - $interm.Entries.Count
-        dirx -Path .\* -Filter $Include -Exclude $Exclude $Recurse -Force | ForEach-Object {
+        dirx -Path (Join-Path $Path *) -Filter $Include -Exclude $Exclude $Recurse -Force | ForEach-Object {
             if ($_.FullName -eq $XML) {
                 return
             }
@@ -209,7 +204,7 @@ function Start-PsFCIV {
             # process current hash entries and copy required hash values to a new entry object.
             "SHA1", "MD5" | ForEach-Object {$entry.$_ = $db.Entries[$index].$_}
             $db.Entries[$index] = $entry
-            __checkfiles $newentry $file $Action
+            __checkfiles $newentry $file $Action $Strict
         }
         # we are done. Overwrite XML, display stats and exit.
         __writeXml $db
@@ -229,7 +224,7 @@ function Start-PsFCIV {
                 if (Test-Path -LiteralPath $entry.Name) {
                     # and check file integrity
                     $file = Get-Item -LiteralPath $entry.Name -Force -ErrorAction SilentlyContinue
-                    __checkfiles $entry $file $Action
+                    __checkfiles $entry $file $Action $Strict
                 } else {
                     # if there is no record for the file, skip it and display appropriate message
                     Write-Verbose "File '$filename' not found. Skipping."
@@ -247,7 +242,7 @@ function Start-PsFCIV {
                 $entry = $_
                 if (Test-Path -LiteralPath $entry.Name) {
                     $file = Get-Item -LiteralPath $entry.Name -Force -ErrorAction SilentlyContinue
-                    __checkfiles $entry $file $Action
+                    __checkfiles $entry $file $Action $Strict
                 } else {
                     Write-Verbose "File '$($entry.Name)' not found. Skipping."
                     __addStatCounter $entry.Name Missed
@@ -258,7 +253,7 @@ function Start-PsFCIV {
         # if there is no existing XML DB file, start from scratch and create a new one.
         Write-Debug "New XML mode ON"
         $mode = "New"
-        dirx -Path .\* -Filter $Include -Exclude $Exclude $Recurse -Force | ForEach-Object {
+        dirx -Path (Join-Path $Path *) -Filter $Include -Exclude $Exclude $Recurse -Force | ForEach-Object {
              Write-Verbose "Perform file '$($_.fullName)' checking."
              $file = Get-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue
              if (__testFileLock $file) {return}

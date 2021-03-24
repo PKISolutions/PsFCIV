@@ -9,6 +9,6 @@ namespace PsFCIV.Support {
         public Int32 Missed { get; set; }
         public Int32 Locked { get; set; }
         public Int32 Unknown { get; set; }
-        public Int32 Del { get; set; }
+        public Int32 Deleted { get; set; }
     }
 }

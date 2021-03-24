@@ -97,9 +97,15 @@ function __takeAction ($file, $Action) {
     }
 }
 # core file verification function.
-function __checkfiles ($entry, $file, $Action) {
+function __checkfiles ($entry, $file, $Action, $Strict) {
     if (__testFileLock $file) {return}
-    if (($file.Length -eq $entry.Size) -and ("$($file.LastWriteTime.ToUniversalTime())" -eq $entry.TimeStamp)) {
+    if ($Strict -and (($file.Length -ne $entry.Size) -or ("$($file.LastWriteTime.ToUniversalTime())" -ne $entry.TimeStamp))) {
+        Write-Verbose "File '$($file.FullName)' size or Modified Date/Time mismatch."
+        Write-Debug "Expected file size is: $($entry.Size) byte(s), actual size is: $($file.Length) byte(s)."
+        Write-Debug "Expected file modification time is: $($entry.TimeStamp), actual file modification time is: $($file.LastWriteTime.ToUniversalTime())"
+        __addStatCounter $entry.Name Bad
+        __takeAction $file $Action
+    } else {
         $hexhash = __selectHAlg $entry $file $HashAlgorithm
         $ActualHash = [PsFCIV.Support.CryptUtils]::FormatBytes([Convert]::FromBase64String($entry.($hexhash.HashName)), "Hex")
         if (!$ActualHash) {
@@ -118,17 +124,10 @@ function __checkfiles ($entry, $file, $Action) {
             __addStatCounter $entry.Name Bad
             __takeAction $file $Action
         }
-    } else {
-        Write-Verbose "File '$($file.FullName)' size or Modified Date/Time mismatch."
-        Write-Debug "Expected file size is: $($entry.Size) byte(s), actual size is: $($file.Length) byte(s)."
-        Write-Debug "Expected file modification time is: $($entry.TimeStamp), actual file modification time is: $($file.LastWriteTime.ToUniversalTime())"
-        __addStatCounter $entry.Name Bad
-        __takeAction $file $Action
     }
 }
 function __finalize {
-    # restore original variables
-    Set-Location -LiteralPath $oldpath
+    # do nothing at this moment
 }
 #endregion
 

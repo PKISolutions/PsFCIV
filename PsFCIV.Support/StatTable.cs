@@ -10,6 +10,6 @@ namespace PsFCIV.Support {
         public List<String> Missed { get; } = new List<String>();
         public List<String> Locked { get; } = new List<String>();
         public List<String> Unknown { get; } = new List<String>();
-        public Int32 Del { get; set; }
+        public Int32 Deleted { get; set; }
     }
 }
