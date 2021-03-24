@@ -1,4 +1,4 @@
-# PsFCIV -- PowerShell File Checksum Integrity Verifier
+# PsFCIV — PowerShell File Checksum Integrity Verifier
 The module replaces and enhances discontinued Microsoft's File Checksum Integrity Verifier (FCIV) which is intended to monitor file share integrity.
 PsFCIV is two-way compatible with FCIV database format, thus transition from FCIV doesn't require any efforts. PsFCIV includes the following features:
 
