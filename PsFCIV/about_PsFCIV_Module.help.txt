@@ -29,7 +29,7 @@ BUILT-IN COMMANDS
     PsFCIV exports single command 'Start-PsFCIV'. Type 'Get-Help Start-PsFCIV'
     to read command description, parameters and usage examples.
 DOCUMENTATION
-    Documentation for PSPKI module and its commands are available at project
+    Documentation for PsFCIV module and its commands are available at project
     home page: https://www.pkisolutions.com/tools/psfciv/
 SUPPORT INFORMATION
     The official support page for the module:
