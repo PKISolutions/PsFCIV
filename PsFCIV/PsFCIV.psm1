@@ -25,7 +25,7 @@ function __writeXml ($root) {
 }
 # lightweight proxy function for Get-ChildItem cmdlet
 function dirx ([string]$Path, [string]$Filter, [string[]]$Exclude, $Recurse, [switch]$Force) {
-    Get-ChildItem @PSBoundParameters -File -ErrorAction SilentlyContinue
+    Get-ChildItem @PSBoundParameters -ErrorAction SilentlyContinue | Where-Object {!$_.PsIsContainer}
 }
 # internal function that will check whether the file is locked. All locked files are added to a group with 'Unknown' status.
 function __testFileLock ($file) {
