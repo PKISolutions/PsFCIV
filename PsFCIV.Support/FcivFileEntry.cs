@@ -58,10 +58,10 @@ namespace PsFCIV.Support {
             return Equals((FcivFileEntry) obj);
         }
         protected Boolean Equals(FcivFileEntry other) {
-            return String.Equals(Name, other.Name, StringComparison.InvariantCultureIgnoreCase);
+            return String.Equals(Name, other.Name, StringComparison.OrdinalIgnoreCase);
         }
         public override Int32 GetHashCode() {
-            return StringComparer.InvariantCultureIgnoreCase.GetHashCode(Name);
+            return StringComparer.OrdinalIgnoreCase.GetHashCode(Name);
         }
     }
 }
